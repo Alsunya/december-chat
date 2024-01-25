@@ -66,4 +66,13 @@ public class Server {
     public synchronized void sendPrivateMessage(ClientHandler sender, String receiverUsername, String message) {
         // TODO homework
     }
+
+    public synchronized void kickMember(String userToBeKicked) {
+        if (isUserBusy(userToBeKicked)) {
+            ClientHandler clientHandler = clients.stream().filter(c -> c.getUsername().equals(userToBeKicked)).findFirst().get();
+            broadcastMessage("СЕРВЕР: Админ заблокировал пользователя с ником '" + userToBeKicked + "'");
+            clientHandler.sendMessage("Вы заблокированы");
+            clientHandler.disconnect();
+        }
+    }
 }

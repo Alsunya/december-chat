@@ -9,11 +9,19 @@ public class InMemoryUserService implements UserService {
         private String login;
         private String password;
         private String username;
+        private String role;
 
+        public User(String login, String password, String username, String role) {
+            this.login = login;
+            this.password = password;
+            this.username = username;
+            this.role = role;
+        }
         public User(String login, String password, String username) {
             this.login = login;
             this.password = password;
             this.username = username;
+            this.role = "USER";
         }
     }
 
@@ -21,9 +29,9 @@ public class InMemoryUserService implements UserService {
 
     public InMemoryUserService() {
         this.users = new ArrayList<>(Arrays.asList(
-                new User("login1", "pass1", "user1"),
-                new User("login2", "pass2", "user2"),
-                new User("login3", "pass3", "user3")
+                new User("login1", "pass1", "user1", "ADMIN"),
+                new User("login2", "pass2", "user2", "USER"),
+                new User("login3", "pass3", "user3", "USER")
         ));
     }
 
@@ -38,8 +46,8 @@ public class InMemoryUserService implements UserService {
     }
 
     @Override
-    public void createNewUser(String login, String password, String username) {
-        users.add(new User(login, password, username));
+    public void createNewUser(String login, String password, String username, String role) {
+        users.add(new User(login, password, username, role));
     }
 
     @Override
@@ -60,5 +68,15 @@ public class InMemoryUserService implements UserService {
             }
         }
         return false;
+    }
+
+    @Override
+    public String getUserRoleByLoginAndPassword(String login, String password) {
+        for (User u : users) {
+            if (u.login.equals(login) && u.password.equals(password)) {
+                return u.role;
+            }
+        }
+        return null;
     }
 }
