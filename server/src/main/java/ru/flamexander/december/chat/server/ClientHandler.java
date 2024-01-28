@@ -44,13 +44,17 @@ public class ClientHandler {
                 if (message.startsWith("/w ")) {
                     // TODO homework chat part 1
                 }
-                if (message.startsWith("/kick ") && (this.role.equals("ADMIN"))){
-                    String[] messageElements = message.split(" ");
-                    if (messageElements.length != 2) {
-                        sendMessage("СЕРВЕР: Некорректная команда");
+                if (message.startsWith("/kick ")){
+                    if (this.role.equals("ADMIN")) {
+                        String[] messageElements = message.split(" ");
+                        if (messageElements.length != 2) {
+                            sendMessage("СЕРВЕР: Некорректная команда");
+                        } else {
+                            server.kickMember(messageElements[1]);
+                        }
                     }
                     else {
-                        server.kickMember(messageElements[1]);
+                        sendMessage("У вас недостаточно прав для данной операции.");
                     }
                 }
             }
