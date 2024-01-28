@@ -34,10 +34,13 @@ public class ClientHandler {
                             break;
                         }
                         if (message.startsWith("/w ")) {
-                            // TODO homework
+                            String[] messageElements = message.split(" ", 3);
+                            server.sendPrivateMessage(this, messageElements[1], message);
                         }
                     }
-                    server.broadcastMessage(username + ": " + message);
+                    else {
+                        server.broadcastMessage(username + ": " + message);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -50,6 +53,15 @@ public class ClientHandler {
     public void sendMessage(String message) {
         try {
             out.writeUTF(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendMessage(String message, ClientHandler receiver, ClientHandler sender) {
+        try {
+            receiver.out.writeUTF(sender.username + ": " + message);
+            sender.out.writeUTF(sender.username + ": " + message);
         } catch (IOException e) {
             e.printStackTrace();
         }
