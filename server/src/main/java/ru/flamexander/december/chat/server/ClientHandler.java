@@ -11,6 +11,7 @@ public class ClientHandler {
     private DataOutputStream out;
     private DataInputStream in;
     private String username;
+    private String role;
 
     public String getUsername() {
         return username;
@@ -44,7 +45,21 @@ public class ClientHandler {
                     String[] messageElements = message.split(" ", 3);
                     server.sendPrivateMessage(this, messageElements[1], message);
                 }
-            } else {
+                if (message.startsWith("/kick ")){
+                    if (this.role.equals("ADMIN")) {
+                        String[] messageElements = message.split(" ");
+                        if (messageElements.length != 2) {
+                            sendMessage("СЕРВЕР: Некорректная команда");
+                        } else {
+                            server.kickMember(messageElements[1]);
+                        }
+                    }
+                    else {
+                        sendMessage("У вас недостаточно прав для данной операции.");
+                    }
+                }
+            }
+            else {
                 server.broadcastMessage(username + ": " + message);
             }
         }
@@ -101,6 +116,7 @@ public class ClientHandler {
         String login = elements[1];
         String password = elements[2];
         String usernameFromUserService = server.getUserService().getUsernameByLoginAndPassword(login, password);
+        role = server.getUserService().getUserRoleByLoginAndPassword(login, password);
         if (usernameFromUserService == null) {
             sendMessage("СЕРВЕР: пользователя с указанным логин/паролем не существует");
             return false;
@@ -125,6 +141,7 @@ public class ClientHandler {
         String login = elements[1];
         String password = elements[2];
         String registrationUsername = elements[3];
+        String role = "USER";
         if (server.getUserService().isLoginAlreadyExist(login)) {
             sendMessage("СЕРВЕР: указанный login уже занят");
             return false;
@@ -133,7 +150,7 @@ public class ClientHandler {
             sendMessage("СЕРВЕР: указанное имя пользователя уже занято");
             return false;
         }
-        server.getUserService().createNewUser(login, password, registrationUsername);
+        server.getUserService().createNewUser(login, password, registrationUsername, role);
         username = registrationUsername;
         sendMessage("/authok " + username);
         sendMessage("СЕРВЕР: " + username + ", вы успешно прошли регистрацию, добро пожаловать в чат!");
