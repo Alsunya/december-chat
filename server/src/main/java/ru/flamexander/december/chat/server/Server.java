@@ -64,7 +64,11 @@ public class Server {
     }
 
     public synchronized void sendPrivateMessage(ClientHandler sender, String receiverUsername, String message) {
-        // TODO homework
+        for (ClientHandler client: clients) {
+            if (client.getUsername().equals(receiverUsername)){
+                client.sendMessage(message, client, sender);
+            }
+        }
     }
 
     public synchronized void kickMember(String userToBeKicked) {
