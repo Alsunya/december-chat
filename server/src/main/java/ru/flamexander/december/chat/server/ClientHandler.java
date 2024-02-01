@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Set;
 
 public class ClientHandler {
     private Server server;
@@ -11,7 +12,7 @@ public class ClientHandler {
     private DataOutputStream out;
     private DataInputStream in;
     private String username;
-    private String role;
+    private Set<Role> roles;
 
     public String getUsername() {
         return username;
@@ -46,11 +47,12 @@ public class ClientHandler {
                     server.sendPrivateMessage(this, messageElements[1], message);
                 }
                 if (message.startsWith("/kick ")){
-                    if (this.role.equals("ADMIN")) {
-                        String[] messageElements = message.split(" ");
+                    if (this.roles.stream().anyMatch(role -> role.getName().equals("ADMIN"))) {
+                    String[] messageElements = message.split(" ");
                         if (messageElements.length != 2) {
                             sendMessage("СЕРВЕР: Некорректная команда");
-                        } else {
+                        }
+                        else {
                             server.kickMember(messageElements[1]);
                         }
                     }
@@ -116,7 +118,7 @@ public class ClientHandler {
         String login = elements[1];
         String password = elements[2];
         String usernameFromUserService = server.getUserService().getUsernameByLoginAndPassword(login, password);
-        role = server.getUserService().getUserRoleByLoginAndPassword(login, password);
+        roles = server.getUserService().getUserRoleByLoginAndPassword(login, password);
         if (usernameFromUserService == null) {
             sendMessage("СЕРВЕР: пользователя с указанным логин/паролем не существует");
             return false;
