@@ -6,26 +6,27 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class JDBCUserService implements UserService{
-    private static final String DATABASE_URL = "jdbc:postgresql://localhost:5432/postgres";
+public class JDBCUserService implements UserService {
+    static final String DATABASE_URL = "jdbc:postgresql://localhost:5432/postgres";
 
-    private  static final String SELECT_USERS_SQL = "SELECT u.login, u.password, u.user_name FROM Users u";
+    private static final String SELECT_USERS_SQL = "SELECT u.login, u.password, u.user_name FROM Users u";
     private static final String SELECT_ROLES_FOR_USER = "SELECT r.id, r.name " +
             "from user_to_role left join roles r on r.id = user_to_role.role_id where user_id = ?";
+    static final String UPDATE_USERNAME = "UPDATE users SET user_name = ? WHERE user_name = ?";
     static List<User> users = new ArrayList<>();
 
     public void startService() {
-        try(Connection connection = DriverManager.getConnection(DATABASE_URL, "alsu", "postgres")) {
-            try(Statement statement = connection.createStatement()) {
-                try(ResultSet resultSet = statement.executeQuery(SELECT_USERS_SQL)) {
+        try (Connection connection = DriverManager.getConnection(DATABASE_URL, "alsu", "postgres")) {
+            try (Statement statement = connection.createStatement()) {
+                try (ResultSet resultSet = statement.executeQuery(SELECT_USERS_SQL)) {
                     while (resultSet.next()) {
                         String login = resultSet.getString(1);
                         String password = resultSet.getString(2);
                         String userName = resultSet.getString(3);
                         User user = new User(login, password, userName);
-                        try(PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ROLES_FOR_USER)) {
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ROLES_FOR_USER)) {
                             preparedStatement.setString(1, userName);
-                            try(ResultSet rs = preparedStatement.executeQuery()) {
+                            try (ResultSet rs = preparedStatement.executeQuery()) {
                                 Set<Role> roles = new HashSet<>();
                                 while (rs.next()) {
                                     Integer id = rs.getInt(1);
@@ -43,7 +44,6 @@ public class JDBCUserService implements UserService{
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        System.out.println(users);
     }
 
     @Override
