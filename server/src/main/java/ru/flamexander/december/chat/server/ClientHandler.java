@@ -4,6 +4,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Set;
 
 public class ClientHandler {
@@ -13,9 +17,13 @@ public class ClientHandler {
     private DataInputStream in;
     private String username;
     private Set<Role> roles;
+    private LocalTime enterTime;
 
     public String getUsername() {
         return username;
+    }
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public ClientHandler(Server server, Socket socket) throws IOException {
@@ -29,43 +37,72 @@ public class ClientHandler {
                 listenUserChatMessages();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             } finally {
                 disconnect();
             }
         }).start();
     }
 
-    private void listenUserChatMessages() throws IOException {
+    private void listenUserChatMessages() throws IOException, SQLException {
         while (true) {
-            String message = in.readUTF();
-            if (message.startsWith("/")) {
-                if (message.equals("/exit")) {
-                    break;
+                String message = in.readUTF();
+                if(Duration.between(enterTime, LocalTime.now()).toMinutes() >= 20) {
+                    sendMessage("Вы были не активны более 20 минут. Выполнен выход из чата.");
+                    disconnect();
                 }
-                if (message.startsWith("/w ")) {
-                    String[] messageElements = message.split(" ", 3);
-                    server.sendPrivateMessage(this, messageElements[1], message);
-                }
-                if (message.startsWith("/kick ")){
-                    if (this.roles.stream().anyMatch(role -> role.getName().equals("ADMIN"))) {
-                    String[] messageElements = message.split(" ");
+                else if (message.startsWith("/")) {
+                    if (message.equals("/exit")) {
+                        break;
+                    }
+                    if (message.startsWith("/w")) {
+                        String[] messageElements = message.split(" ", 3);
+                        server.sendPrivateMessage(this, messageElements[1], message);
+                    }
+                    if (message.startsWith("/kick")) {
+                        if (this.roles.stream().anyMatch(role -> role.getName().equals("ADMIN"))) {
+                            String[] messageElements = message.split(" ");
+                            if (messageElements.length != 2) {
+                                sendMessage("СЕРВЕР: Некорректная команда");
+                            } else {
+                                server.kickMember(messageElements[1]);
+                            }
+                        } else {
+                            sendMessage("У вас недостаточно прав для данной операции");
+                        }
+                    }
+                    if (message.startsWith("/changenick")) {
+                        String[] messageElements = message.split(" ");
                         if (messageElements.length != 2) {
                             sendMessage("СЕРВЕР: Некорректная команда");
-                        }
-                        else {
-                            server.kickMember(messageElements[1]);
+                        } else if (messageElements[1].equals(this.getUsername())) {
+                            sendMessage("Этот ник у вас уже установлен");
+                        } else {
+                            server.changeNick(this, messageElements[1]);
                         }
                     }
-                    else {
-                        sendMessage("У вас недостаточно прав для данной операции.");
+                    if (message.startsWith("/activelist")) {
+                        sendMessage("Список активных пользователей:" + server.getActiveClients());
                     }
+                    if (message.startsWith("/shutdown")) {
+                        if (this.roles.stream().anyMatch(role -> role.getName().equals("ADMIN"))) {
+                            String[] messageElements = message.split(" ");
+                            if (messageElements.length != 1) {
+                                sendMessage("СЕРВЕР: Некорректная команда");
+                            } else {
+                                server.broadcastMessage("Админ остановил чат");
+                                server.stop();
+                            }
+                        } else {
+                            sendMessage("У вас недостаточно прав для данной операции");
+                        }
+                    }
+                } else {
+                    server.broadcastMessage(ZonedDateTime.now() + " " + this.username + ": " + message);
                 }
             }
-            else {
-                server.broadcastMessage(username + ": " + message);
-            }
         }
-    }
 
     public void sendMessage(String message) {
         try {
@@ -101,7 +138,7 @@ public class ClientHandler {
             e.printStackTrace();
         }
         try {
-            if (socket != null) {
+            if (socket != null && !socket.isClosed()) {
                 socket.close();
             }
         } catch (IOException e) {
@@ -172,6 +209,7 @@ public class ClientHandler {
                 sendMessage("СЕРВЕР: требуется войти в учетную запись или зарегистрироваться");
             }
             if (isSucceed) {
+                enterTime = LocalTime.now();
                 break;
             }
         }

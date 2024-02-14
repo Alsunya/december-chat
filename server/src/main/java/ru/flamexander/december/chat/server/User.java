@@ -5,7 +5,7 @@ import java.util.Set;
 public class User {
     private final String login;
     private final String password;
-    private final String userName;
+    private String userName;
     private String role;
 
     @Override
@@ -37,6 +37,9 @@ public class User {
 
     public String getUserName() {
         return userName;
+    }
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
     public User(String login, String password, String userName, String role) {
